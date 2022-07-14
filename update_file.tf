@@ -1,3 +1,4 @@
+
 resource "azurerm_resource_group" "example" {
   name     = "example-resource-group"
   location = "West Europe"
@@ -32,20 +33,18 @@ resource "azurerm_cosmosdb_account" "db" {
   }
 
   consistency_policy {
-    consistency_level       = "BoundedStaleness"
-    max_interval_in_seconds = 300
-    max_staleness_prefix    = 100000
+    consistency_level       = "Session"
   }
 
   geo_location {
     failover_priority = 0
-    location = "westeurope"
+    location          = "westeurope"
   }
 }
 
 
 
-resource "null_resource" "db" {
+/* resource "null_resource" "db" {
   provisioner "local-exec" {
     command = <<EOT
     az cosmosdb update --name tfex-cosmos-db-11864 --resource-group example-resource-group --default-identity 'SystemAssignedIdentity'
@@ -54,4 +53,14 @@ resource "null_resource" "db" {
   depends_on = [
     azurerm_cosmosdb_account.db
   ]
-} 
+}  */
+
+resource "azapi_update_resource" "db_update" {
+  resource_id = azurerm_cosmosdb_account.db.id
+  type        = "Microsoft.DocumentDB/databaseAccounts@2022-02-15-preview"
+  body = jsonencode({
+    properties = {
+      defaultIdentity = "SystemAssignedIdentity"
+    }
+  })
+}
